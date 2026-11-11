@@ -159,6 +159,14 @@ func TestPackageArch(t *testing.T) {
 	if err != nil || arch != "x86" {
 		t.Fatalf("apk 386: %s %v", arch, err)
 	}
+	arch, err = packageArch("apk", "mips64le", "")
+	if err != nil || arch != "mips64" {
+		t.Fatalf("apk mips64le: %s %v", arch, err)
+	}
+	arch, err = packageArch("rpm", "mips64le", "")
+	if err != nil || arch != "mips64el" {
+		t.Fatalf("rpm mips64le: %s %v", arch, err)
+	}
 	if _, err := packageArch("deb", "wasm", ""); err == nil {
 		t.Fatal("expected unsupported arch")
 	}
