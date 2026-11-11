@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/logo.jpg" alt="gobunshin" width="280">
+  <img src="docs/logo.png" alt="gobunshin" width="280">
 </p>
 
 # gobunshin
