@@ -28,6 +28,10 @@ go.work.sum
 # env file
 .env
 
+# Release output
+/dist/
+/gobunshin
+
 # Editor/IDE
 # .idea/
 # .vscode/

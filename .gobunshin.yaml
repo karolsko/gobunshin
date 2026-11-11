@@ -1,0 +1,77 @@
+version: 1
+project_name: gobunshin
+
+metadata:
+  license: MIT
+  description: Fully free release automation for Go projects
+  homepage: https://github.com/karolsko/gobunshin
+
+git:
+  ignore_tags:
+    - '^nightly$'
+
+before:
+  hooks:
+    - go test ./...
+
+builds:
+  - id: gobunshin
+    main: ./cmd/gobunshin
+    binary: gobunshin
+    env:
+      - CGO_ENABLED=0
+    flags:
+      - -trimpath
+    ldflags:
+      - '-s -w -X main.version={{ .Version }} -X main.commit={{ .Commit }} -X main.date={{ .Date }}'
+    goos: [linux, darwin, windows]
+    goarch: [amd64, arm64]
+
+archives:
+  - formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    files:
+      - LICENSE
+      - README.md
+
+checksum:
+  name_template: checksums.txt
+
+nfpms:
+  - package_name: gobunshin
+    maintainer: Karol Skoczyk <karolsko@users.noreply.github.com>
+    formats: [deb, rpm, apk]
+    contents:
+      - src: LICENSE
+        dst: /usr/share/licenses/gobunshin/LICENSE
+      - src: README.md
+        dst: /usr/share/doc/gobunshin/README.md
+
+changelog:
+  sort: asc
+  groups:
+    - title: Features
+      regexp: '^feat'
+    - title: Fixes
+      regexp: '^fix'
+  filters:
+    exclude:
+      - '^docs:'
+      - '^chore:'
+
+release:
+  github:
+    owner: karolsko
+    name: gobunshin
+
+homebrews:
+  - name: gobunshin
+    description: Fully free release automation for Go projects
+    homepage: https://github.com/karolsko/gobunshin
+    license: MIT
+    test: 'system "#{bin}/gobunshin", "version"'
+    # repository:
+    #   owner: karolsko
+    #   name: homebrew-tap
