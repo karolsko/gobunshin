@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/logo.jpg" alt="gobunshin" width="280">
+</p>
+
 # gobunshin
 
 Fully free release automation for Go projects. [GoReleaser](https://goreleaser.com) is excellent, and its Pro edition locks monorepos, nightly builds, config includes, macOS and Windows installers, and a long list of other features behind a paid license. gobunshin is an MIT-licensed tool with no paid tier, no license key, and no phone-home.
