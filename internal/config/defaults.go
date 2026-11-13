@@ -197,6 +197,30 @@ func ApplyDefaults(p *Project, dir string) {
 			n.Release = "1"
 		}
 	}
+	for i := range p.Installers {
+		n := &p.Installers[i]
+		if n.ID == "" {
+			n.ID = "installer"
+			if i > 0 {
+				n.ID = fmtID("installer", i+1)
+			}
+		}
+		if n.Name == "" {
+			n.Name = p.ProjectName
+		}
+		if n.Identifier == "" {
+			n.Identifier = "com.gobunshin." + strings.ToLower(n.Name)
+		}
+		if len(n.Formats) == 0 {
+			n.Formats = []string{"pkg", "nsis"}
+		}
+		if n.Bindir == "" {
+			n.Bindir = "/usr/local/bin"
+		}
+		if n.FileNameTemplate == "" {
+			n.FileNameTemplate = "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}"
+		}
+	}
 	for i := range p.Signs {
 		if p.Signs[i].ID == "" {
 			p.Signs[i].ID = fmtID("sign", i+1)

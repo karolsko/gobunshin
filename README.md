@@ -13,6 +13,7 @@ The name is 分身: a double.
 - Cross-compile Go binaries, or ship binaries you already built (`builder: prebuilt`)
 - `tar.gz`, `zip`, and raw binary archives, with extra files and a Windows format override
 - Linux system packages: `.deb`, `.rpm`, and `.apk`, from the same binaries
+- macOS `.pkg` installers and Windows NSIS installers
 - sha256 and sha512 checksums. Archive metadata uses the commit time, so the same commit packs to the same bytes
 - Changelog from git, with groups, include and exclude filters, and path filters
 - GitHub releases, including header and footer files
@@ -29,7 +30,7 @@ The name is 分身: a double.
 
 ## Not in this version
 
-Docker and Podman images, Scoop, Winget, Nix, npm, Arch and OpenWrt packages, macOS `.pkg` / `.dmg` / notarization, and Windows MSI or NSIS installers are not implemented yet. Signing and notarizing are available only by shelling out through `signs` and hooks.
+Docker and Podman images, Scoop, Winget, Nix, npm, Arch and OpenWrt packages, macOS disk images, and Windows MSI installers are not implemented yet. macOS packages are unsigned. Windows installers are NSIS executables and need `makensis` on the release machine. Signing and notarizing are available only by shelling out through `signs` and hooks.
 
 ## Install
 
@@ -236,6 +237,8 @@ homebrews:
 ```
 
 `nfpms` packs every Linux binary into `.deb`, `.rpm`, and `.apk`. The binary is installed to `bindir` (`/usr/bin` by default). Darwin and Windows binaries are skipped, so `--single-target` on a Mac still succeeds and simply produces no system packages. `package_name` is a lowercase package name. `maintainer` is required. A description, homepage, and license fall back to `metadata`. Checksums cover the packages, and the default signer signs them together with the archives.
+
+`installers` writes a macOS component package for each Darwin binary and an NSIS installer for each Windows binary. The `.pkg` installs into `bindir` (`/usr/local/bin` by default). The Windows installer copies `name.exe` into `Program Files\name` and registers an uninstaller. Building the `.exe` requires `makensis`.
 
 Included files are merged first. Scalars in the including file win. `builds` and `archives` merge by `id` when every entry has an id. Other lists are replaced.
 

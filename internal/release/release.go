@@ -129,6 +129,9 @@ func Execute(parent context.Context, opt Options, cmd string) error {
 	if err := pipeline.Packages(rc); err != nil {
 		return err
 	}
+	if err := pipeline.Installers(rc); err != nil {
+		return err
+	}
 	if err := pipeline.TemplateFiles(rc); err != nil {
 		return err
 	}
@@ -236,7 +239,7 @@ func check(rc *runctx.Context) error {
 	}
 	rc.Log.Step("config is valid")
 	rc.Log.Sub("project %s", rc.Project.ProjectName)
-	rc.Log.Sub("%d builds, %d targets, %d archives, %d system packages", len(rc.Project.Builds), n, len(rc.Project.Archives), len(rc.Project.NFPMs))
+	rc.Log.Sub("%d builds, %d targets, %d archives, %d system packages, %d installers", len(rc.Project.Builds), n, len(rc.Project.Archives), len(rc.Project.NFPMs), len(rc.Project.Installers))
 	return nil
 }
 

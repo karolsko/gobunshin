@@ -29,6 +29,7 @@ type Project struct {
 	Release       Release           `yaml:"release,omitempty"`
 	Homebrews     []Homebrew        `yaml:"homebrews,omitempty"`
 	NFPMs         []NFPM            `yaml:"nfpms,omitempty"`
+	Installers    []Installer       `yaml:"installers,omitempty"`
 	TemplateFiles []TemplateFile    `yaml:"template_files,omitempty"`
 }
 
@@ -304,6 +305,18 @@ type NFPMScripts struct {
 	PostInstall string `yaml:"postinstall,omitempty"`
 	PreRemove   string `yaml:"preremove,omitempty"`
 	PostRemove  string `yaml:"postremove,omitempty"`
+}
+
+// Installer builds a macOS .pkg or a Windows NSIS installer from one binary.
+type Installer struct {
+	ID               string   `yaml:"id,omitempty"`
+	IDs              []string `yaml:"ids,omitempty"`
+	Name             string   `yaml:"name,omitempty"`
+	Identifier       string   `yaml:"identifier,omitempty"`
+	Formats          []string `yaml:"formats,omitempty"`
+	Bindir           string   `yaml:"bindir,omitempty"`
+	FileNameTemplate string   `yaml:"file_name_template,omitempty"`
+	If               string   `yaml:"if,omitempty"`
 }
 
 // TemplateFile is rendered into dist/ and uploaded with the release.

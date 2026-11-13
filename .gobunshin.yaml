@@ -64,6 +64,11 @@ nfpms:
       - src: README.md
         dst: /usr/share/doc/gobunshin/README.md
 
+installers:
+  - name: gobunshin
+    identifier: com.github.karolsko.gobunshin
+    formats: [pkg, nsis]
+
 changelog:
   sort: asc
   groups:

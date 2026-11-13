@@ -200,6 +200,43 @@ func Validate(p *Project) error {
 		}
 	}
 
+	instFormats := map[string]bool{"pkg": true, "nsis": true}
+	seenInst := map[string]bool{}
+	ident := regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9.-]*$`)
+	for _, n := range p.Installers {
+		if n.ID == "" {
+			errs = append(errs, fmt.Errorf("installer id is required"))
+		} else if seenInst[n.ID] {
+			errs = append(errs, fmt.Errorf("duplicate installer id %q", n.ID))
+		}
+		seenInst[n.ID] = true
+		if strings.TrimSpace(n.Name) == "" {
+			errs = append(errs, fmt.Errorf("installer %s: name is required", n.ID))
+		}
+		if !ident.MatchString(n.Identifier) {
+			errs = append(errs, fmt.Errorf("installer %s: identifier %q must be a package id", n.ID, n.Identifier))
+		}
+		if len(n.Formats) == 0 {
+			errs = append(errs, fmt.Errorf("installer %s: formats is required", n.ID))
+		}
+		for _, f := range n.Formats {
+			if !instFormats[f] {
+				errs = append(errs, fmt.Errorf("installer %s: unknown format %q", n.ID, f))
+			}
+		}
+		for _, id := range n.IDs {
+			if !buildIDs[id] {
+				errs = append(errs, fmt.Errorf("installer %s: unknown build id %q", n.ID, id))
+			}
+		}
+		if n.Bindir != "" && !strings.Contains(n.Bindir, "{{") && !strings.HasPrefix(n.Bindir, "/") {
+			errs = append(errs, fmt.Errorf("installer %s: bindir must be an absolute path", n.ID))
+		}
+		for _, field := range []string{n.Name, n.Identifier, n.Bindir, n.FileNameTemplate, n.If} {
+			errs = append(errs, parseField(field)...)
+		}
+	}
+
 	signKinds := map[string]bool{"": true, "archives": true, "checksum": true, "binary": true, "package": true, "all": true}
 	for _, s := range p.Signs {
 		if s.Cmd == "" {

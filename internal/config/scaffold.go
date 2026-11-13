@@ -53,6 +53,8 @@ func Scaffold(dir string) string {
 	b.WriteString("nfpms:\n")
 	b.WriteString("  - maintainer: Your Name <you@example.com>\n")
 	b.WriteString("    formats: [deb, rpm, apk]\n")
+	b.WriteString("installers:\n")
+	b.WriteString("  - formats: [pkg, nsis]\n")
 	b.WriteString("changelog:\n")
 	b.WriteString("  sort: asc\n")
 	b.WriteString("  groups:\n")
