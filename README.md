@@ -93,6 +93,7 @@ Tag a commit and run `gobunshin release` to publish. Set `GITHUB_TOKEN` or `GH_T
 | `release`   | build, package, and publish. Needs a semver tag unless you pass `--snapshot` or `--nightly`    |
 | `publish`   | upload the artifacts recorded in `dist/artifacts.json`                                          |
 | `changelog` | print release notes for the current tag, or for commits since the latest tag                   |
+| `next`      | print the next tag from Conventional Commits                                                    |
 
 Flags: `--snapshot`, `--nightly`, `--single-target`, `--id` (repeatable), `--skip-publish`, `--skip-hooks`, `--skip-clean`, `--timeout`, `--parallel`, `--verbose`, `-f`.
 
@@ -296,7 +297,25 @@ Signing arguments understand `${artifact}` and `${artifactName}` in addition to 
 
 ### 🏷️ Tags
 
-The commit being released must be tagged with a semantic version (`v1.2.3` or `1.2.3`), unless you pass `--snapshot` or `--nightly`. `monorepo.tag_prefix` or `git.tag_prefix` is stripped first, so `demo/v1.2.3` becomes version `1.2.3`.
+With `versioning.conventional_commits`, `gobunshin next` prints the next tag and `gobunshin release` creates it from commits since the previous tag.
+
+- `feat` raises the minor version
+- `fix`, `perf`, and `revert` raise the patch version
+- `!` or a `BREAKING CHANGE:` footer raises the major version
+- other types, including `docs`, `chore`, and `ci`, do not release
+
+```yaml
+versioning:
+  conventional_commits: true
+  tag_prefix: v
+```
+
+```bash
+gobunshin next
+gobunshin release
+```
+
+You can still tag a commit yourself. A semver tag on `HEAD` (`v1.2.3` or `1.2.3`) is used as-is. `--snapshot` and `--nightly` skip this. `monorepo.tag_prefix` or `git.tag_prefix` is stripped first, so `demo/v1.2.3` becomes version `1.2.3`.
 
 `1`, `1.2`, and `1.2.3` are all accepted. Prereleases sort below the final release. For a stable tag, the previous release used for the changelog is the previous stable tag, so `v1.2.3` is compared with `v1.2.2` rather than `v1.2.3-rc.1`.
 

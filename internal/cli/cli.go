@@ -43,7 +43,7 @@ func Main(args []string, info BuildInfo) int {
 	}
 	cmd := args[0]
 	switch cmd {
-	case "init", "check", "build", "release", "publish", "changelog":
+	case "init", "check", "build", "release", "publish", "changelog", "next":
 	default:
 		fmt.Fprintf(os.Stderr, "gobunshin: unknown command %q\n\n%s", cmd, usage)
 		return 2
@@ -169,6 +169,7 @@ Commands:
   release      Build, package, and publish a release
   publish      Publish artifacts already built in dist/
   changelog    Print the changelog for the current or next release
+  next         Print the next tag from Conventional Commits
   version      Print the gobunshin version
 
 Flags:

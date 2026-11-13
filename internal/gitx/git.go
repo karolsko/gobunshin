@@ -13,6 +13,7 @@ import (
 type Commit struct {
 	Hash    string
 	Subject string
+	Body    string
 }
 
 // IsRepo reports whether dir is inside a git work tree.
@@ -62,7 +63,7 @@ func RemoteURL(dir string) (string, error) {
 // rev is empty for the whole history, or a range such as "v1.0.0..HEAD".
 // paths limit the log to those pathspecs. limit 0 means no limit.
 func Log(dir, rev string, paths []string, limit int) ([]Commit, error) {
-	args := []string{"log", "--pretty=format:%H%x1f%s"}
+	args := []string{"log", "--pretty=format:%H%x1f%s%x1f%b%x1e"}
 	if limit > 0 {
 		args = append(args, "-n", fmt.Sprintf("%d", limit))
 	}
@@ -83,19 +84,38 @@ func Log(dir, rev string, paths []string, limit int) ([]Commit, error) {
 		}
 		return nil, fmt.Errorf("git %s: %w: %s", strings.Join(args, " "), err, strings.TrimSpace(msg))
 	}
-	text := strings.TrimRight(string(out), "\n")
+	text := strings.Trim(string(out), "\n\x1e")
 	if text == "" {
 		return nil, nil
 	}
 	var commits []Commit
-	for _, line := range strings.Split(text, "\n") {
-		hash, subject, ok := strings.Cut(line, "\x1f")
-		if !ok || hash == "" {
+	for _, record := range strings.Split(text, "\x1e") {
+		record = strings.Trim(record, "\n")
+		if record == "" {
 			continue
 		}
-		commits = append(commits, Commit{Hash: hash, Subject: strings.TrimSpace(subject)})
+		parts := strings.SplitN(record, "\x1f", 3)
+		if len(parts) < 2 || parts[0] == "" {
+			continue
+		}
+		commit := Commit{Hash: parts[0], Subject: strings.TrimSpace(parts[1])}
+		if len(parts) == 3 {
+			commit.Body = strings.TrimSpace(parts[2])
+		}
+		commits = append(commits, commit)
 	}
 	return commits, nil
+}
+
+// CreateAnnotatedTag creates a tag at HEAD without GPG signing.
+func CreateAnnotatedTag(dir, name, message string) error {
+	cmd := exec.Command("git", "-c", "tag.gpgsign=false", "tag", "-a", name, "-m", message)
+	cmd.Dir = dir
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("git tag %s: %w: %s", name, err, strings.TrimSpace(string(out)))
+	}
+	return nil
 }
 
 // EnvTag returns the tag CI checked out, when git itself has no local tag.

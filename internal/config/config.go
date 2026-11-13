@@ -17,6 +17,7 @@ type Project struct {
 	Metadata      Metadata          `yaml:"metadata,omitempty"`
 	Monorepo      Monorepo          `yaml:"monorepo,omitempty"`
 	Git           Git               `yaml:"git,omitempty"`
+	Versioning    Versioning        `yaml:"versioning,omitempty"`
 	Before        HookGroup         `yaml:"before,omitempty"`
 	After         HookGroup         `yaml:"after,omitempty"`
 	Builds        []Build           `yaml:"builds,omitempty"`
@@ -51,6 +52,12 @@ type Git struct {
 	IgnoreTags []string `yaml:"ignore_tags,omitempty"`
 	TagSort    string   `yaml:"tag_sort,omitempty"`
 	TagPrefix  string   `yaml:"tag_prefix,omitempty"`
+}
+
+// Versioning chooses the next release from Conventional Commits.
+type Versioning struct {
+	ConventionalCommits bool   `yaml:"conventional_commits,omitempty"`
+	TagPrefix           string `yaml:"tag_prefix,omitempty"`
 }
 
 // HookGroup is a list of shell commands.
@@ -348,6 +355,20 @@ func (p Project) TagPrefix() string {
 		return p.Git.TagPrefix
 	}
 	return p.Monorepo.TagPrefix
+}
+
+// ReleasePrefix is prepended to a version computed from Conventional Commits.
+func (p Project) ReleasePrefix() string {
+	if p.Versioning.TagPrefix != "" {
+		return p.Versioning.TagPrefix
+	}
+	if prefix := p.TagPrefix(); prefix != "" {
+		return prefix
+	}
+	if p.Versioning.ConventionalCommits {
+		return "v"
+	}
+	return ""
 }
 
 // Flex helpers keep goarm values written as numbers working after a YAML round trip.

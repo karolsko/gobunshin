@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/karolsko/gobunshin/internal/config"
+	"github.com/karolsko/gobunshin/internal/conventional"
 	"github.com/karolsko/gobunshin/internal/gitx"
 	"github.com/karolsko/gobunshin/internal/logx"
 	"github.com/karolsko/gobunshin/internal/pipeline"
@@ -89,6 +90,13 @@ func Execute(parent context.Context, opt Options, cmd string) error {
 	if err := renderVariables(rc); err != nil {
 		return err
 	}
+	if cmd == "next" {
+		if opt.Stdout == nil {
+			opt.Stdout = os.Stdout
+		}
+		_, err := fmt.Fprintln(opt.Stdout, rc.Tag)
+		return err
+	}
 	if cmd == "changelog" {
 		if err := pipeline.Changelog(rc); err != nil {
 			return err
@@ -146,6 +154,12 @@ func Execute(parent context.Context, opt Options, cmd string) error {
 	}
 	if err := pipeline.WriteManifest(rc); err != nil {
 		return err
+	}
+	if rc.CreateTag {
+		if err := gitx.CreateAnnotatedTag(rc.Dir, rc.Tag, "gobunshin: "+rc.Tag); err != nil {
+			return err
+		}
+		rc.Log.Sub("tagged %s", rc.Tag)
 	}
 	switch {
 	case rc.Snapshot:
@@ -342,6 +356,10 @@ func resolveVersion(rc *runctx.Context, opt Options, cmd string) error {
 			rc.PreviousTag = prev.Name
 		}
 		rc.Log.Step("tag %s", rc.Tag)
+	case rc.Project.Versioning.ConventionalCommits && (cmd == "release" || cmd == "next" || cmd == "changelog"):
+		if err := applyConventional(rc, matched, base, cmd); err != nil {
+			return err
+		}
 	case cmd == "changelog":
 		if prev, ok := semver.Highest(matched, false); ok {
 			rc.PreviousTag = prev.Name
@@ -349,13 +367,53 @@ func resolveVersion(rc *runctx.Context, opt Options, cmd string) error {
 		rc.Version = base
 		rc.Log.Step("unreleased changes")
 	default:
-		return fmt.Errorf("current commit is not tagged; create a tag or pass --snapshot")
+		return fmt.Errorf("current commit is not tagged; create a tag, enable versioning.conventional_commits, or pass --snapshot")
 	}
 	if rc.PreviousTag != "" {
 		rc.Log.Sub("previous %s", rc.PreviousTag)
 	}
 	rc.Log.Sub("commit %s", rc.ShortCommit)
 	return nil
+}
+
+func applyConventional(rc *runctx.Context, matched []semver.Tag, base, cmd string) error {
+	if prev, ok := semver.Highest(matched, false); ok {
+		rc.PreviousTag = prev.Name
+	}
+	rev := ""
+	if rc.PreviousTag != "" {
+		rev = rc.PreviousTag + "..HEAD"
+	}
+	commits, err := gitx.Log(rc.Dir, rev, rc.Project.Changelog.Filters.IncludePaths, 0)
+	if err != nil {
+		return err
+	}
+	current, err := semver.Parse(base)
+	if err != nil {
+		return err
+	}
+	next, level, ok := conventional.Next(current, commits)
+	if !ok {
+		if cmd == "release" {
+			return fmt.Errorf("no feat, fix, or breaking commit since %s", emptyAs(rc.PreviousTag, "the start of the repository"))
+		}
+		rc.Version = current.String()
+		rc.Tag = rc.Project.ReleasePrefix() + rc.Version
+		rc.Log.Step("no version bump since %s", emptyAs(rc.PreviousTag, "the start"))
+		return nil
+	}
+	rc.Version = next.String()
+	rc.Tag = rc.Project.ReleasePrefix() + rc.Version
+	rc.CreateTag = cmd == "release"
+	rc.Log.Step("next %s (%s)", rc.Tag, level)
+	return nil
+}
+
+func emptyAs(value, fallback string) string {
+	if value == "" {
+		return fallback
+	}
+	return value
 }
 
 func applyTemplateVersion(rc *runctx.Context, base, template string) error {

@@ -33,6 +33,7 @@ type Context struct {
 	Changelog    string
 	Snapshot     bool
 	Nightly      bool
+	CreateTag    bool
 	Binaries     []*artifact.Artifact
 	Artifacts    []*artifact.Artifact
 	Log          *logx.Logger

@@ -10,6 +10,10 @@ git:
   ignore_tags:
     - '^nightly$'
 
+versioning:
+  conventional_commits: true
+  tag_prefix: v
+
 before:
   hooks:
     - go test ./...

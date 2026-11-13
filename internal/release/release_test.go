@@ -313,6 +313,36 @@ func archiveContains(t *testing.T, path, needle string) bool {
 	}
 }
 
+func TestNextVersion(t *testing.T) {
+	t.Setenv("GITHUB_REF", "")
+	t.Setenv("CI_COMMIT_TAG", "")
+	dir := initRepo(t)
+	cfg := []byte("version: 1\nproject_name: demo\nversioning:\n  conventional_commits: true\n  tag_prefix: v\nbuilds:\n  - main: .\n    goos: [linux]\n    goarch: [amd64]\n")
+	if err := os.WriteFile(filepath.Join(dir, ".gobunshin.yaml"), cfg, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "main.go"), []byte("package main\nfunc main() {}\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	git(t, dir, "add", ".")
+	git(t, dir, "commit", "-m", "chore: init")
+	git(t, dir, "tag", "v0.1.0")
+	if err := os.WriteFile(filepath.Join(dir, "note.txt"), []byte("x\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	git(t, dir, "add", "note.txt")
+	git(t, dir, "commit", "-m", "feat: packages")
+
+	var out bytes.Buffer
+	err := Execute(context.Background(), Options{Dir: dir, Stdout: &out, Stderr: io.Discard}, "next")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.TrimSpace(out.String()) != "v0.2.0" {
+		t.Fatalf("next = %q", out.String())
+	}
+}
+
 func initRepo(t *testing.T) string {
 	t.Helper()
 	dir := t.TempDir()
