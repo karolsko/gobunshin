@@ -4,57 +4,101 @@
   <img src="docs/logo.png" alt="gobunshin" width="280">
 </p>
 
-Fully free release automation for Go projects. [GoReleaser](https://goreleaser.com) is excellent, and its Pro edition locks monorepos, nightly builds, config includes, macOS and Windows installers, and a long list of other features behind a paid license. gobunshin is an MIT-licensed tool with no paid tier, no license key, and no phone-home.
+<h3 align="center">
+  <div>
+    <a href="https://github.com/karolsko/gobunshin/issues">
+        <img src="https://img.shields.io/github/issues/karolsko/gobunshin?color=fab387&labelColor=303446&style=for-the-badge">
+    </a>
+    <a href="https://github.com/karolsko/gobunshin/stargazers">
+        <img src="https://img.shields.io/github/stars/karolsko/gobunshin?color=ca9ee6&labelColor=303446&style=for-the-badge">
+    </a>
+    <a href="https://github.com/karolsko/gobunshin/actions/workflows/ci.yml">
+        <img src="https://img.shields.io/github/actions/workflow/status/karolsko/gobunshin/ci.yml?color=a6e3a1&labelColor=303446&style=for-the-badge&label=CI">
+    </a>
+    <a href="https://github.com/karolsko/gobunshin/blob/main/LICENSE">
+        <img src="https://img.shields.io/static/v1.svg?style=for-the-badge&label=License&message=MIT&logoColor=ca9ee6&colorA=313244&colorB=cba6f7"/>
+    </a>
+    <br>
+    </div>
+</h3>
 
-The name is 分身: a double.
+> Fully free release automation for Go projects
 
-## What works today
+**gobunshin** builds, packages, and publishes Go releases. The name is 分身, a double. There is no paid tier, no license key, and no phone-home.
 
-- Cross-compile Go binaries, or ship binaries you already built (`builder: prebuilt`)
-- `tar.gz`, `zip`, and raw binary archives, with extra files and a Windows format override
-- Linux system packages: `.deb`, `.rpm`, and `.apk`, from the same binaries
+## 🧰 Features
+
+- cross-compile Go binaries, or ship binaries you already built
+- `tar.gz`, `zip`, and raw binary archives
+- Linux packages: `.deb`, `.rpm`, and `.apk`
 - macOS `.pkg` installers and Windows NSIS installers
-- sha256 and sha512 checksums. Archive metadata uses the commit time, so the same commit packs to the same bytes
-- Changelog from git, with groups, include and exclude filters, and path filters
-- GitHub releases, including header and footer files
-- Homebrew formulas, written locally and optionally committed to a tap
-- Template files, custom variables, and `{{ .Artifacts }}`
-- Before and after hooks
-- Signing by running your own command (`gpg`, `cosign`, `cp`, anything on `PATH`)
-- Config `includes`, merged by id
-- Monorepo tag prefixes and changelogs limited to one directory
-- `if` filters on builds, archives, and signing
-- Smart semver tag sorting and ignored tags
-- Snapshots, nightlies, and `--single-target`
-- `release --skip-publish`, then `publish`, when you want to build and upload in separate steps
+- checksums, changelogs, and GitHub releases
+- Homebrew formulas
+- config `includes`, custom variables, and `if` filters
+- monorepo tag prefixes and path-scoped changelogs
+- snapshots, nightlies, and `--single-target`
+- hooks, template files, and signing through your own command
 
-## Not in this version
+Docker images, Scoop, Winget, Nix, npm, Arch and OpenWrt packages, macOS disk images, and Windows MSI installers are not in this version. macOS packages are unsigned. Windows installers need `makensis` on the machine that builds the release.
 
-Docker and Podman images, Scoop, Winget, Nix, npm, Arch and OpenWrt packages, macOS disk images, and Windows MSI installers are not implemented yet. macOS packages are unsigned. Windows installers are NSIS executables and need `makensis` on the release machine. Signing and notarizing are available only by shelling out through `signs` and hooks.
+## 📋 Requirements
 
-## Install
+- Go `1.26.4` or newer
+- `git`
+- `makensis` when you build Windows installers
 
-```sh
+## 🛠️ Installation
+
+### 📦 Binary Releases
+
+Pre-compiled binaries for Linux, Windows, and macOS are available on the [Releases](https://github.com/karolsko/gobunshin/releases) page.
+
+### 🐹 Using Go
+
+You can install `gobunshin` directly using `go install`:
+
+```bash
 go install github.com/karolsko/gobunshin/cmd/gobunshin@latest
 ```
 
-Or from a checkout:
+### 🏗️ Build from Source
 
-```sh
-go run ./cmd/gobunshin version
+To build from source, you need to have [Go](https://go.dev/) installed.
+
+```bash
+git clone https://github.com/karolsko/gobunshin.git
+cd gobunshin
+go build -o gobunshin ./cmd/gobunshin
 ```
 
-## Quick start
+## 📖 Usage
 
-```sh
+Create a config, check it, and build a local snapshot. A snapshot is never published.
+
+```bash
 gobunshin init
 gobunshin check
 gobunshin release --snapshot --single-target
 ```
 
-A snapshot never uploads anything. Tag a commit and run `gobunshin release` to publish. Set `GITHUB_TOKEN` or `GH_TOKEN`. The token needs permission to create releases, and to write contents on a Homebrew tap when you publish a formula.
+Tag a commit and run `gobunshin release` to publish. Set `GITHUB_TOKEN` or `GH_TOKEN`. The token needs permission to create releases, and to write contents on a Homebrew tap when you publish a formula.
 
-## GitHub Actions
+### ⌨️ Commands
+
+| Command     | Action                                                                                          |
+| ----------- | ----------------------------------------------------------------------------------------------- |
+| `init`      | write `.gobunshin.yaml`                                                                         |
+| `check`     | validate the config and print the build matrix                                                 |
+| `build`     | run before hooks and compile binaries into `dist/build`                                        |
+| `release`   | build, package, and publish. Needs a semver tag unless you pass `--snapshot` or `--nightly`    |
+| `publish`   | upload the artifacts recorded in `dist/artifacts.json`                                          |
+| `changelog` | print release notes for the current tag, or for commits since the latest tag                   |
+
+Flags: `--snapshot`, `--nightly`, `--single-target`, `--id` (repeatable), `--skip-publish`, `--skip-hooks`, `--skip-clean`, `--timeout`, `--parallel`, `--verbose`, `-f`.
+
+`release.mode: replace` deletes the existing GitHub release and moves the tag to the current commit. Nightlies always do that for `nightly.tag_name` (default `nightly`).
+
+### 🚀 GitHub Actions
 
 The repository contains an action. On a tag push it installs gobunshin, fetches the full history when the checkout is shallow, and runs the release. `contents: write` lets the workflow token upload the release.
 
@@ -69,9 +113,11 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
+      - name: Install NSIS
+        run: sudo apt-get update && sudo apt-get install -y nsis
       - uses: karolsko/gobunshin@v1
         with:
           args: release
@@ -79,7 +125,7 @@ jobs:
 
 Until the first `v1` tag exists, call the action from the checkout with `uses: ./`. This repository's [release workflow](.github/workflows/release.yml) does that.
 
-`args` is split on spaces. `version` installs a published module version instead of the action checkout, for example `v1.2.3` or `latest`. `workdir` selects a module in a monorepo. `token` overrides the workflow token when the release repository needs a different credential.
+`args` is split on spaces. `version` installs a published module version instead of the action checkout. `workdir` selects a module in a monorepo. `token` overrides the workflow token.
 
 ```yaml
 - uses: karolsko/gobunshin@v1
@@ -89,33 +135,9 @@ Until the first `v1` tag exists, call the action from the checkout with `uses: .
     workdir: services/api
 ```
 
-`check` does not publish anything:
+## ⚙️ Configuration
 
-```yaml
-- uses: ./
-  with:
-    args: check
-```
-
-
-## Commands
-
-| Command | What it does |
-| --- | --- |
-| `init` | Write `.gobunshin.yaml` |
-| `check` | Validate the config and print the build matrix |
-| `build` | Run before hooks and compile binaries into `dist/build` |
-| `release` | Build, archive, checksum, sign, and publish. Requires a semver tag unless you pass `--snapshot` or `--nightly` |
-| `publish` | Upload the artifacts recorded in `dist/artifacts.json` |
-| `changelog` | Print release notes for the current tag, or for commits since the latest tag |
-
-Useful flags: `--snapshot`, `--nightly`, `--single-target`, `--id` (repeatable), `--skip-publish`, `--skip-hooks`, `--skip-clean`, `--timeout`, `--parallel`, `--verbose`, `-f`.
-
-`release.mode: replace` deletes the existing GitHub release and moves the tag to the current commit. Nightlies always do that for `nightly.tag_name` (default `nightly`).
-
-## Config
-
-`.gobunshin.yaml` in the project root. Unknown keys are an error. `version` must be `1`.
+`.gobunshin.yaml` lives in the project root. Unknown keys are an error. `version` must be `1`.
 
 ```yaml
 version: 1
@@ -189,6 +211,11 @@ nfpms:
     scripts:
       postinstall: scripts/postinstall.sh
 
+installers:
+  - name: demo
+    identifier: com.example.demo
+    formats: [pkg, nsis]
+
 signs:
   - cmd: gpg
     args: ["--batch", "--detach-sign", "--output", "${artifact}.sig", "${artifact}"]
@@ -236,13 +263,13 @@ homebrews:
       name: homebrew-tap
 ```
 
-`nfpms` packs every Linux binary into `.deb`, `.rpm`, and `.apk`. The binary is installed to `bindir` (`/usr/bin` by default). Darwin and Windows binaries are skipped, so `--single-target` on a Mac still succeeds and simply produces no system packages. `package_name` is a lowercase package name. `maintainer` is required. A description, homepage, and license fall back to `metadata`. Checksums cover the packages, and the default signer signs them together with the archives.
+`nfpms` packs every Linux binary into `.deb`, `.rpm`, and `.apk`. The binary is installed to `bindir` (`/usr/bin` by default). `package_name` is a lowercase package name. `maintainer` is required. Description, homepage, and license fall back to `metadata`.
 
-`installers` writes a macOS component package for each Darwin binary and an NSIS installer for each Windows binary. The `.pkg` installs into `bindir` (`/usr/local/bin` by default). The Windows installer copies `name.exe` into `Program Files\name` and registers an uninstaller. Building the `.exe` requires `makensis`.
+`installers` writes a `.pkg` for each Darwin binary and an NSIS `.exe` for each Windows binary. The package installs into `bindir` (`/usr/local/bin` by default). The Windows installer copies `name.exe` into `Program Files\name` and registers an uninstaller.
 
 Included files are merged first. Scalars in the including file win. `builds` and `archives` merge by `id` when every entry has an id. Other lists are replaced.
 
-`if` is a template. The build or archive is kept when the result is anything other than empty, `false`, `no`, or `0`.
+`if` is a template. The build, archive, package, or installer is kept when the result is anything other than empty, `false`, `no`, or `0`.
 
 A prebuilt binary:
 
@@ -257,7 +284,7 @@ builds:
 
 The path must stay inside the project.
 
-## Templates
+### 🧩 Templates
 
 `{{ .Version }}`, `{{ .Tag }}`, `{{ .Commit }}`, `{{ .ShortCommit }}`, `{{ .Date }}`, `{{ .Timestamp }}`, `{{ .Now }}`, `{{ .ProjectName }}`, `{{ .Os }}`, `{{ .Arch }}`, `{{ .Arm }}`, `{{ .Ext }}`, `{{ .Binary }}`, `{{ .Major }}`, `{{ .Minor }}`, `{{ .Patch }}`, `{{ .Prerelease }}`, `{{ .IsSnapshot }}`, `{{ .IsNightly }}`, `{{ .Changelog }}`, `{{ .Env.NAME }}`, `{{ .Var.NAME }}`, `{{ .Artifacts }}`.
 
@@ -267,7 +294,7 @@ In `snapshot.version_template`, `.Version` is still the latest tag (or `0.0.0`).
 
 Signing arguments understand `${artifact}` and `${artifactName}` in addition to templates. The default signature path is `${artifact}.sig`.
 
-## Tag rules
+### 🏷️ Tags
 
 The commit being released must be tagged with a semantic version (`v1.2.3` or `1.2.3`), unless you pass `--snapshot` or `--nightly`. `monorepo.tag_prefix` or `git.tag_prefix` is stripped first, so `demo/v1.2.3` becomes version `1.2.3`.
 
@@ -275,6 +302,35 @@ The commit being released must be tagged with a semantic version (`v1.2.3` or `1
 
 `git.ignore_tags` is a list of regular expressions matched against the full tag.
 
-## License
+## 👨🏻‍💻 Development
 
-MIT. See [LICENSE](LICENSE).
+1. **Clone the repository**
+
+   ```sh
+   git clone https://github.com/karolsko/gobunshin.git
+   cd gobunshin
+   ```
+
+1. **Run the tests**
+
+   ```sh
+   go test ./...
+   ```
+
+1. **Build a binary**
+
+   ```sh
+   go build -o gobunshin ./cmd/gobunshin
+   ```
+
+## 🗒️ Credits
+
+### 🎨 Inspiration
+
+I was inspired by:
+
+- [goreleaser/goreleaser](https://github.com/goreleaser/goreleaser)
+
+## 📜 License
+
+This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) file for details.
