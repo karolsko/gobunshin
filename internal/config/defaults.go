@@ -212,7 +212,7 @@ func ApplyDefaults(p *Project, dir string) {
 			n.Identifier = "com.gobunshin." + strings.ToLower(n.Name)
 		}
 		if len(n.Formats) == 0 {
-			n.Formats = []string{"pkg", "nsis"}
+			n.Formats = []string{"pkg", "dmg", "nsis"}
 		}
 		if n.Bindir == "" {
 			n.Bindir = "/usr/local/bin"

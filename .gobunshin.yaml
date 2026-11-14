@@ -71,7 +71,7 @@ nfpms:
 installers:
   - name: gobunshin
     identifier: com.github.karolsko.gobunshin
-    formats: [pkg, nsis]
+    formats: [pkg, dmg, nsis]
 
 changelog:
   sort: asc

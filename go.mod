@@ -4,6 +4,7 @@ go 1.26.4
 
 require (
 	github.com/goreleaser/nfpm/v2 v2.48.0
+	github.com/leaanthony/dmg v0.0.0-20260731075144-3d3581c3dfa3
 	gopkg.in/yaml.v3 v3.0.1
 )
 

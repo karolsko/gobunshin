@@ -31,7 +31,7 @@
 - cross-compile Go binaries, or ship binaries you already built
 - `tar.gz`, `zip`, and raw binary archives
 - Linux packages: `.deb`, `.rpm`, and `.apk`
-- macOS `.pkg` installers and Windows NSIS installers
+- macOS `.pkg` and `.dmg` installers, and Windows NSIS installers
 - checksums, changelogs, and GitHub releases
 - Homebrew formulas
 - config `includes`, custom variables, and `if` filters
@@ -39,7 +39,7 @@
 - snapshots, nightlies, and `--single-target`
 - hooks, template files, and signing through your own command
 
-Docker images, Scoop, Winget, Nix, npm, Arch and OpenWrt packages, macOS disk images, and Windows MSI installers are not in this version. macOS packages are unsigned. Windows installers need `makensis` on the machine that builds the release.
+Docker images, Scoop, Winget, Nix, npm, Arch and OpenWrt packages, and Windows MSI installers are not in this version. macOS packages and disk images are unsigned. Windows installers need `makensis` on the machine that builds the release.
 
 ## 📋 Requirements
 
@@ -215,7 +215,7 @@ nfpms:
 installers:
   - name: demo
     identifier: com.example.demo
-    formats: [pkg, nsis]
+    formats: [pkg, dmg, nsis]
 
 signs:
   - cmd: gpg
@@ -266,7 +266,7 @@ homebrews:
 
 `nfpms` packs every Linux binary into `.deb`, `.rpm`, and `.apk`. The binary is installed to `bindir` (`/usr/bin` by default). `package_name` is a lowercase package name. `maintainer` is required. Description, homepage, and license fall back to `metadata`.
 
-`installers` writes a `.pkg` for each Darwin binary and an NSIS `.exe` for each Windows binary. The package installs into `bindir` (`/usr/local/bin` by default). The Windows installer copies `name.exe` into `Program Files\name` and registers an uninstaller.
+`installers` writes a `.pkg` and a `.dmg` for each Darwin binary, and an NSIS `.exe` for each Windows binary. The package installs into `bindir` (`/usr/local/bin` by default). The disk image is an HFS+ volume whose root contains the binary. The Windows installer copies `name.exe` into `Program Files\name` and registers an uninstaller.
 
 Included files are merged first. Scalars in the including file win. `builds` and `archives` merge by `id` when every entry has an id. Other lists are replaced.
 

@@ -200,7 +200,7 @@ func Validate(p *Project) error {
 		}
 	}
 
-	instFormats := map[string]bool{"pkg": true, "nsis": true}
+	instFormats := map[string]bool{"pkg": true, "dmg": true, "nsis": true}
 	seenInst := map[string]bool{}
 	ident := regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9.-]*$`)
 	for _, n := range p.Installers {
@@ -221,7 +221,7 @@ func Validate(p *Project) error {
 		}
 		for _, f := range n.Formats {
 			if !instFormats[f] {
-				errs = append(errs, fmt.Errorf("installer %s: unknown format %q", n.ID, f))
+				errs = append(errs, fmt.Errorf("installer %s: format %q must be pkg, dmg, or nsis", n.ID, f))
 			}
 		}
 		for _, id := range n.IDs {

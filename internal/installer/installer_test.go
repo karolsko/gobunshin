@@ -58,6 +58,33 @@ func TestPkgExpands(t *testing.T) {
 	}
 }
 
+func TestDmgVerifies(t *testing.T) {
+	when := time.Date(2026, 1, 2, 3, 4, 0, 0, time.UTC)
+	body := []byte("#!/bin/sh\necho hi\n")
+	img, err := Dmg("gobunshin", []File{{
+		Path: "/usr/local/bin/gobunshin",
+		Data: body,
+	}}, when)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(img) < 512 || string(img[len(img)-512:len(img)-508]) != "koly" {
+		t.Fatal("missing UDIF koly trailer")
+	}
+	path := filepath.Join(t.TempDir(), "gobunshin.dmg")
+	if err := os.WriteFile(path, img, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := exec.LookPath("hdiutil"); err != nil {
+		t.Skip("hdiutil is not available")
+	}
+	cmd := exec.Command("hdiutil", "verify", path)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("hdiutil verify: %v\n%s", err, out)
+	}
+}
+
 func TestNSISScript(t *testing.T) {
 	script := NSISScript("gobunshin", "1.2.3", "amd64", "/tmp/gobunshin.exe", "/tmp/out.exe")
 	for _, want := range []string{`Name "gobunshin 1.2.3"`, `$PROGRAMFILES64\gobunshin`, `File "/oname=gobunshin.exe"`, "DisplayVersion"} {

@@ -314,7 +314,7 @@ type NFPMScripts struct {
 	PostRemove  string `yaml:"postremove,omitempty"`
 }
 
-// Installer builds a macOS .pkg or a Windows NSIS installer from one binary.
+// Installer builds a macOS .pkg, a macOS .dmg, or a Windows NSIS installer from one binary.
 type Installer struct {
 	ID               string   `yaml:"id,omitempty"`
 	IDs              []string `yaml:"ids,omitempty"`

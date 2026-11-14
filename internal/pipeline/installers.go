@@ -14,7 +14,7 @@ import (
 	"github.com/karolsko/gobunshin/internal/tmpl"
 )
 
-// Installers builds macOS .pkg and Windows NSIS installers.
+// Installers builds macOS .pkg and .dmg images and Windows NSIS installers.
 func Installers(c *runctx.Context) error {
 	if len(c.Project.Installers) == 0 {
 		return nil
@@ -55,7 +55,7 @@ func Installers(c *runctx.Context) error {
 
 func installerWants(format, goos string) bool {
 	switch format {
-	case "pkg":
+	case "pkg", "dmg":
 		return goos == "darwin"
 	case "nsis":
 		return goos == "windows"
@@ -77,6 +77,8 @@ func oneInstaller(c *runctx.Context, spec config.Installer, bin *artifact.Artifa
 	switch format {
 	case "pkg":
 		return writePkg(c, spec, bin, name, base)
+	case "dmg":
+		return writeDmg(c, spec, bin, name, base)
 	case "nsis":
 		return writeNSIS(c, spec, bin, name, base)
 	default:
@@ -112,6 +114,22 @@ func writePkg(c *runctx.Context, spec config.Installer, bin *artifact.Artifact, 
 	}
 	filename := base + ".pkg"
 	return addInstaller(c, spec, bin, "pkg", filename, pkg)
+}
+
+func writeDmg(c *runctx.Context, spec config.Installer, bin *artifact.Artifact, name, base string) error {
+	body, err := os.ReadFile(bin.Path)
+	if err != nil {
+		return err
+	}
+	img, err := installer.Dmg(name, []installer.File{{
+		Path: bin.Binary,
+		Data: body,
+		Mode: 0o755,
+	}}, c.CommitTime)
+	if err != nil {
+		return fmt.Errorf("installer %s: %w", spec.ID, err)
+	}
+	return addInstaller(c, spec, bin, "dmg", base+".dmg", img)
 }
 
 func writeNSIS(c *runctx.Context, spec config.Installer, bin *artifact.Artifact, name, base string) error {

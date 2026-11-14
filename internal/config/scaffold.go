@@ -54,7 +54,7 @@ func Scaffold(dir string) string {
 	b.WriteString("  - maintainer: Your Name <you@example.com>\n")
 	b.WriteString("    formats: [deb, rpm, apk]\n")
 	b.WriteString("installers:\n")
-	b.WriteString("  - formats: [pkg, nsis]\n")
+	b.WriteString("  - formats: [pkg, dmg, nsis]\n")
 	b.WriteString("versioning:\n")
 	b.WriteString("  conventional_commits: true\n")
 	b.WriteString("  tag_prefix: v\n")
