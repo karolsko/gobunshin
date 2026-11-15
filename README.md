@@ -12,6 +12,9 @@
     <a href="https://github.com/karolsko/gobunshin/stargazers">
         <img src="https://img.shields.io/github/stars/karolsko/gobunshin?color=ca9ee6&labelColor=303446&style=for-the-badge">
     </a>
+    <a href="https://github.com/karolsko/gobunshin">
+        <img src="https://img.shields.io/github/repo-size/karolsko/gobunshin?color=8caaee&labelColor=303446&style=for-the-badge">
+    </a>
     <a href="https://github.com/karolsko/gobunshin/actions/workflows/ci.yml">
         <img src="https://img.shields.io/github/actions/workflow/status/karolsko/gobunshin/ci.yml?color=a6e3a1&labelColor=303446&style=for-the-badge&label=CI">
     </a>
