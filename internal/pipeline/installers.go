@@ -9,6 +9,8 @@ import (
 
 	"github.com/karolsko/gobunshin/internal/artifact"
 	"github.com/karolsko/gobunshin/internal/config"
+	"github.com/karolsko/gobunshin/internal/fsys"
+	"github.com/karolsko/gobunshin/internal/icon"
 	"github.com/karolsko/gobunshin/internal/installer"
 	"github.com/karolsko/gobunshin/internal/runctx"
 	"github.com/karolsko/gobunshin/internal/tmpl"
@@ -121,11 +123,22 @@ func writeDmg(c *runctx.Context, spec config.Installer, bin *artifact.Artifact, 
 	if err != nil {
 		return err
 	}
+	var volumeIcon []byte
+	if spec.Icons.Dmg != "" {
+		iconPath, iconBody, err := readIcon(c, spec, bin, spec.Icons.Dmg)
+		if err != nil {
+			return fmt.Errorf("installer %s: %w", spec.ID, err)
+		}
+		volumeIcon, err = icon.ICNS(iconPath, iconBody)
+		if err != nil {
+			return fmt.Errorf("installer %s: %w", spec.ID, err)
+		}
+	}
 	img, err := installer.Dmg(name, []installer.File{{
 		Path: bin.Binary,
 		Data: body,
 		Mode: 0o755,
-	}}, c.CommitTime)
+	}}, volumeIcon, c.CommitTime)
 	if err != nil {
 		return fmt.Errorf("installer %s: %w", spec.ID, err)
 	}
@@ -138,7 +151,17 @@ func writeNSIS(c *runctx.Context, spec config.Installer, bin *artifact.Artifact,
 		return fmt.Errorf("installer %s: name %q is not a file name", spec.ID, filename)
 	}
 	dst := filepath.Join(c.Dist, filename)
-	script := installer.NSISScript(name, c.Version, bin.Goarch, bin.Path, dst)
+	if err := os.MkdirAll(filepath.Dir(dst), 0o755); err != nil {
+		return err
+	}
+	iconPath, err := nsisIcon(c, spec, bin, dst)
+	if err != nil {
+		return fmt.Errorf("installer %s: %w", spec.ID, err)
+	}
+	if iconPath != "" {
+		defer os.Remove(iconPath)
+	}
+	script := installer.NSISScript(name, c.Version, bin.Goarch, bin.Path, dst, iconPath)
 	if err := installer.NSIS(script, dst); err != nil {
 		return fmt.Errorf("installer %s: %w", spec.ID, err)
 	}
@@ -158,6 +181,58 @@ func writeNSIS(c *runctx.Context, spec config.Installer, bin *artifact.Artifact,
 	}
 	c.Log.Sub("%s", filename)
 	return nil
+}
+
+func nsisIcon(c *runctx.Context, spec config.Installer, bin *artifact.Artifact, outfile string) (string, error) {
+	src := spec.Icons.Exe
+	if src == "" {
+		for _, build := range c.Project.Builds {
+			if build.ID == bin.BuildID {
+				src = build.Icon
+				break
+			}
+		}
+	}
+	if src == "" {
+		return "", nil
+	}
+	path, body, err := readIcon(c, spec, bin, src)
+	if err != nil {
+		return "", err
+	}
+	win, err := icon.Windows(path, body)
+	if err != nil {
+		return "", err
+	}
+	dst := strings.TrimSuffix(outfile, filepath.Ext(outfile)) + ".ico"
+	f, err := os.OpenFile(dst, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o644)
+	if err != nil {
+		return "", err
+	}
+	writeErr := icon.WriteICO(f, win)
+	closeErr := f.Close()
+	if writeErr != nil {
+		os.Remove(dst)
+		return "", writeErr
+	}
+	if closeErr != nil {
+		os.Remove(dst)
+		return "", closeErr
+	}
+	return dst, nil
+}
+
+func readIcon(c *runctx.Context, spec config.Installer, bin *artifact.Artifact, path string) (string, []byte, error) {
+	data := c.TargetData(bin.Goos, bin.Goarch, bin.Goarm, bin.Binary)
+	rendered, err := tmpl.Render(path, data)
+	if err != nil {
+		return "", nil, err
+	}
+	body, err := fsys.ReadUnder(c.Dir, rendered)
+	if err != nil {
+		return "", nil, err
+	}
+	return rendered, body, nil
 }
 
 func addInstaller(c *runctx.Context, spec config.Installer, bin *artifact.Artifact, format, filename string, body []byte) error {

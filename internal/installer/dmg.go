@@ -10,16 +10,27 @@ import (
 	"github.com/leaanthony/dmg/udif"
 )
 
+// kHasCustomIcon marks the volume as having a custom icon in .VolumeIcon.icns.
+// kIsInvisible hides that file in the Finder window.
+const (
+	kHasCustomIcon = 0x0400
+	kIsInvisible   = 0x4000
+)
+
 // Dmg builds a mountable UDZO disk image containing files at the volume root.
 // The image is HFS+ and can be created on any operating system.
-func Dmg(volume string, files []File, when time.Time) ([]byte, error) {
+// volumeIcon is optional ICNS data shown when the image is mounted.
+func Dmg(volume string, files []File, volumeIcon []byte, when time.Time) ([]byte, error) {
 	if volume == "" {
 		return nil, fmt.Errorf("volume name is required")
 	}
 	if len(files) == 0 {
 		return nil, fmt.Errorf("disk image has no files")
 	}
-	children := make([]*hfsplus.Entry, 0, len(files))
+	if len(volumeIcon) > 0 && (len(volumeIcon) < 8 || string(volumeIcon[:4]) != "icns") {
+		return nil, fmt.Errorf("volume icon is not an icns file")
+	}
+	children := make([]*hfsplus.Entry, 0, len(files)+1)
 	for _, f := range files {
 		name := path.Base(f.Path)
 		if name == "" || name == "." || name == "/" {
@@ -36,10 +47,22 @@ func Dmg(volume string, files []File, when time.Time) ([]byte, error) {
 			Mode: mode,
 		})
 	}
+	var rootFlags uint16
+	if len(volumeIcon) > 0 {
+		children = append(children, &hfsplus.Entry{
+			Name:        ".VolumeIcon.icns",
+			Kind:        hfsplus.KindFile,
+			Data:        volumeIcon,
+			Mode:        0o644,
+			FinderFlags: kIsInvisible,
+		})
+		rootFlags = kHasCustomIcon
+	}
 	img, err := hfsplus.Build(&hfsplus.Volume{
-		Name:      volume,
-		CreatedAt: when,
-		Children:  children,
+		Name:            volume,
+		CreatedAt:       when,
+		Children:        children,
+		RootFinderFlags: rootFlags,
 	})
 	if err != nil {
 		return nil, err

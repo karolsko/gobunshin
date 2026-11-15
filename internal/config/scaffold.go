@@ -35,6 +35,7 @@ func Scaffold(dir string) string {
 		b.WriteString("    main: .\n")
 	}
 	fmt.Fprintf(&b, "    binary: %s\n", name)
+	b.WriteString("    # icon: assets/icon.png\n")
 	b.WriteString("    env:\n")
 	b.WriteString("      - CGO_ENABLED=0\n")
 	b.WriteString("    flags:\n")
@@ -55,6 +56,9 @@ func Scaffold(dir string) string {
 	b.WriteString("    formats: [deb, rpm, apk]\n")
 	b.WriteString("installers:\n")
 	b.WriteString("  - formats: [pkg, dmg, nsis]\n")
+	b.WriteString("    # icons:\n")
+	b.WriteString("    #   exe: assets/icon.png\n")
+	b.WriteString("    #   dmg: assets/icon.png\n")
 	b.WriteString("versioning:\n")
 	b.WriteString("  conventional_commits: true\n")
 	b.WriteString("  tag_prefix: v\n")

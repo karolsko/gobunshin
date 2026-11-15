@@ -5,6 +5,7 @@ go 1.26.4
 require (
 	github.com/goreleaser/nfpm/v2 v2.48.0
 	github.com/leaanthony/dmg v0.0.0-20260731075144-3d3581c3dfa3
+	github.com/tc-hib/winres v0.3.1
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -36,6 +37,7 @@ require (
 	github.com/klauspost/pgzip v1.2.7 // indirect
 	github.com/mitchellh/copystructure v1.2.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
+	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646 // indirect
 	github.com/pjbgf/sha1cd v0.6.0 // indirect
 	github.com/sergi/go-diff v1.4.0 // indirect
 	github.com/shopspring/decimal v1.4.0 // indirect
@@ -47,6 +49,7 @@ require (
 	go.digitalxero.dev/rpm v0.3.4 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
 	golang.org/x/crypto v0.58.0 // indirect
+	golang.org/x/image v0.12.0 // indirect
 	golang.org/x/net v0.60.0 // indirect
 	golang.org/x/sys v0.49.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect

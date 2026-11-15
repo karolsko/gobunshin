@@ -9,19 +9,25 @@ import (
 )
 
 // NSISScript is an installer script compiled by makensis.
-func NSISScript(name, version, goarch, source, outfile string) string {
+// icon is an optional .ico path compiled into the installer executable.
+func NSISScript(name, version, goarch, source, outfile, icon string) string {
 	installDir := `$PROGRAMFILES64\` + nsisString(name)
 	if goarch == "386" {
 		installDir = `$PROGRAMFILES\` + nsisString(name)
 	}
 	regKey := `Software\Microsoft\Windows\CurrentVersion\Uninstall\` + nsisString(name)
 	exeName := nsisString(name) + ".exe"
+	iconLines := ""
+	if icon != "" {
+		quoted := nsisString(filepath.ToSlash(icon))
+		iconLines = fmt.Sprintf("Icon \"%s\"\nUninstallIcon \"%s\"\n", quoted, quoted)
+	}
 	return fmt.Sprintf(`Unicode true
 Name "%s %s"
 OutFile "%s"
 InstallDir "%s"
 RequestExecutionLevel admin
-ShowInstDetails show
+%sShowInstDetails show
 
 Page directory
 Page instfiles
@@ -50,6 +56,7 @@ SectionEnd
 		nsisString(name), nsisString(version),
 		nsisString(outfile),
 		installDir,
+		iconLines,
 		exeName, nsisString(filepath.ToSlash(source)),
 		regKey, nsisString(name),
 		regKey, nsisString(version),

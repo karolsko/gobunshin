@@ -3,6 +3,7 @@ package config
 import (
 	"errors"
 	"fmt"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -84,6 +85,9 @@ func Validate(p *Project) error {
 			if b.Prebuilt.Path == "" {
 				errs = append(errs, fmt.Errorf("build %s: prebuilt.path is required", b.ID))
 			}
+			if b.Icon != "" {
+				errs = append(errs, fmt.Errorf("build %s: icon requires builder go", b.ID))
+			}
 		default:
 			errs = append(errs, fmt.Errorf("build %s: builder must be go or prebuilt", b.ID))
 		}
@@ -92,7 +96,11 @@ func Validate(p *Project) error {
 		}
 		errs = append(errs, parseField(b.If)...)
 		errs = append(errs, parseField(b.Binary)...)
+		errs = append(errs, parseField(b.Icon)...)
 		errs = append(errs, parseField(b.Prebuilt.Path)...)
+		if err := iconExt("build "+b.ID, b.Icon, ".png", ".jpg", ".jpeg", ".ico"); err != nil {
+			errs = append(errs, err)
+		}
 		for _, s := range append(append([]string{}, b.Ldflags...), b.Env...) {
 			errs = append(errs, parseField(s)...)
 		}
@@ -232,8 +240,14 @@ func Validate(p *Project) error {
 		if n.Bindir != "" && !strings.Contains(n.Bindir, "{{") && !strings.HasPrefix(n.Bindir, "/") {
 			errs = append(errs, fmt.Errorf("installer %s: bindir must be an absolute path", n.ID))
 		}
-		for _, field := range []string{n.Name, n.Identifier, n.Bindir, n.FileNameTemplate, n.If} {
+		for _, field := range []string{n.Name, n.Identifier, n.Bindir, n.FileNameTemplate, n.If, n.Icons.Exe, n.Icons.Dmg} {
 			errs = append(errs, parseField(field)...)
+		}
+		if err := iconExt("installer "+n.ID, n.Icons.Exe, ".png", ".jpg", ".jpeg", ".ico"); err != nil {
+			errs = append(errs, err)
+		}
+		if err := iconExt("installer "+n.ID, n.Icons.Dmg, ".png", ".jpg", ".jpeg", ".icns"); err != nil {
+			errs = append(errs, err)
 		}
 	}
 
@@ -291,4 +305,17 @@ func parseField(s string) []error {
 		return []error{err}
 	}
 	return nil
+}
+
+func iconExt(what, path string, allowed ...string) error {
+	if path == "" || strings.Contains(path, "{{") {
+		return nil
+	}
+	ext := strings.ToLower(filepath.Ext(path))
+	for _, want := range allowed {
+		if ext == want {
+			return nil
+		}
+	}
+	return fmt.Errorf("%s: icon %q must be %s", what, path, strings.Join(allowed, ", "))
 }

@@ -7,13 +7,18 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 
 	"github.com/karolsko/gobunshin/internal/artifact"
 	"github.com/karolsko/gobunshin/internal/config"
 	"github.com/karolsko/gobunshin/internal/fsys"
+	"github.com/karolsko/gobunshin/internal/icon"
 	"github.com/karolsko/gobunshin/internal/runctx"
 	"github.com/karolsko/gobunshin/internal/tmpl"
 )
+
+// iconMu keeps Windows icon objects from landing in the same package directory at once.
+var iconMu sync.Mutex
 
 type buildJob struct {
 	build  config.Build
@@ -193,6 +198,62 @@ func goBuild(c *runctx.Context, j buildJob) error {
 		args = append(args, "-ldflags", strings.Join(flags, " "))
 	}
 	args = append(args, j.build.Main)
+	run := func() error {
+		return runGo(c, j, args, data)
+	}
+	if j.target.Goos == "windows" && j.build.Icon != "" {
+		return withWindowsIcon(c, j, data, run)
+	}
+	return run()
+}
+
+func withWindowsIcon(c *runctx.Context, j buildJob, data tmpl.Data, run func() error) error {
+	iconMu.Lock()
+	defer iconMu.Unlock()
+	rendered, err := tmpl.Render(j.build.Icon, data)
+	if err != nil {
+		return fmt.Errorf("build %s: %w", j.build.ID, err)
+	}
+	body, err := fsys.ReadUnder(c.Dir, rendered)
+	if err != nil {
+		return fmt.Errorf("build %s: %w", j.build.ID, err)
+	}
+	win, err := icon.Windows(rendered, body)
+	if err != nil {
+		return fmt.Errorf("build %s: %w", j.build.ID, err)
+	}
+	dir := packageDir(workingDir(c, j.build), j.build.Main)
+	syso := filepath.Join(dir, "gobunshin_windows_"+j.target.Goarch+".syso")
+	if _, err := os.Lstat(syso); err == nil {
+		return fmt.Errorf("build %s: %s already exists", j.build.ID, syso)
+	}
+	f, err := os.OpenFile(syso, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o644)
+	if err != nil {
+		return fmt.Errorf("build %s: %w", j.build.ID, err)
+	}
+	writeErr := icon.WriteSyso(f, j.target.Goarch, win)
+	closeErr := f.Close()
+	if writeErr != nil {
+		os.Remove(syso)
+		return fmt.Errorf("build %s: %w", j.build.ID, writeErr)
+	}
+	if closeErr != nil {
+		os.Remove(syso)
+		return fmt.Errorf("build %s: %w", j.build.ID, closeErr)
+	}
+	defer os.Remove(syso)
+	return run()
+}
+
+func packageDir(work, main string) string {
+	main = filepath.Clean(main)
+	if strings.HasSuffix(main, ".go") {
+		return filepath.Join(work, filepath.Dir(main))
+	}
+	return filepath.Join(work, main)
+}
+
+func runGo(c *runctx.Context, j buildJob, args []string, data tmpl.Data) error {
 	cmd := exec.CommandContext(c.Go, "go", args...)
 	cmd.Dir = workingDir(c, j.build)
 	cmd.Env = append(os.Environ(), "GOOS="+j.target.Goos, "GOARCH="+j.target.Goarch)

@@ -102,6 +102,7 @@ type Build struct {
 	Env      []string `yaml:"env,omitempty"`
 	Flags    []string `yaml:"flags,omitempty"`
 	Ldflags  []string `yaml:"ldflags,omitempty"`
+	Icon     string   `yaml:"icon,omitempty"`
 	Goos     []string `yaml:"goos,omitempty"`
 	Goarch   []string `yaml:"goarch,omitempty"`
 	Goarm    []string `yaml:"goarm,omitempty"`
@@ -316,14 +317,23 @@ type NFPMScripts struct {
 
 // Installer builds a macOS .pkg, a macOS .dmg, or a Windows NSIS installer from one binary.
 type Installer struct {
-	ID               string   `yaml:"id,omitempty"`
-	IDs              []string `yaml:"ids,omitempty"`
-	Name             string   `yaml:"name,omitempty"`
-	Identifier       string   `yaml:"identifier,omitempty"`
-	Formats          []string `yaml:"formats,omitempty"`
-	Bindir           string   `yaml:"bindir,omitempty"`
-	FileNameTemplate string   `yaml:"file_name_template,omitempty"`
-	If               string   `yaml:"if,omitempty"`
+	ID               string         `yaml:"id,omitempty"`
+	IDs              []string       `yaml:"ids,omitempty"`
+	Name             string         `yaml:"name,omitempty"`
+	Identifier       string         `yaml:"identifier,omitempty"`
+	Formats          []string       `yaml:"formats,omitempty"`
+	Bindir           string         `yaml:"bindir,omitempty"`
+	FileNameTemplate string         `yaml:"file_name_template,omitempty"`
+	Icons            InstallerIcons `yaml:"icons,omitempty"`
+	If               string         `yaml:"if,omitempty"`
+}
+
+// InstallerIcons are optional icons for installer files.
+// Exe is a png, jpg, or ico for the NSIS installer.
+// Dmg is a png, jpg, or icns shown when the disk image is mounted.
+type InstallerIcons struct {
+	Exe string `yaml:"exe,omitempty"`
+	Dmg string `yaml:"dmg,omitempty"`
 }
 
 // TemplateFile is rendered into dist/ and uploaded with the release.
