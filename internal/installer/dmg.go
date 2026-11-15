@@ -19,7 +19,8 @@ const (
 
 // Dmg builds a mountable UDZO disk image containing files at the volume root.
 // The image is HFS+ and can be created on any operating system.
-// volumeIcon is optional ICNS data shown when the image is mounted.
+// volumeIcon is optional ICNS data. It is the mounted volume icon and the icon
+// of each file in the image.
 func Dmg(volume string, files []File, volumeIcon []byte, when time.Time) ([]byte, error) {
 	if volume == "" {
 		return nil, fmt.Errorf("volume name is required")
@@ -40,12 +41,16 @@ func Dmg(volume string, files []File, volumeIcon []byte, when time.Time) ([]byte
 		if f.Mode != 0 {
 			mode = uint16(f.Mode & 0o777)
 		}
-		children = append(children, &hfsplus.Entry{
+		entry := &hfsplus.Entry{
 			Name: name,
 			Kind: hfsplus.KindFile,
 			Data: f.Data,
 			Mode: mode,
-		})
+		}
+		if len(volumeIcon) > 0 {
+			entry.FinderFlags = kHasCustomIcon
+		}
+		children = append(children, entry)
 	}
 	var rootFlags uint16
 	if len(volumeIcon) > 0 {
@@ -66,6 +71,15 @@ func Dmg(volume string, files []File, volumeIcon []byte, when time.Time) ([]byte
 	})
 	if err != nil {
 		return nil, err
+	}
+	if len(volumeIcon) > 0 {
+		for _, f := range files {
+			var err error
+			img, err = setFileIcon(img, path.Base(f.Path), len(f.Data), volumeIcon)
+			if err != nil {
+				return nil, err
+			}
+		}
 	}
 	var buf bytes.Buffer
 	if err := udif.Build(&buf, img, "whole disk (Apple_HFS : 0)"); err != nil {

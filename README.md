@@ -276,7 +276,7 @@ homebrews:
 
 `installers` writes a `.pkg` and a `.dmg` for each Darwin binary, and an NSIS `.exe` for each Windows binary. The package installs into `bindir` (`/usr/local/bin` by default). The disk image is an HFS+ volume whose root contains the binary. The Windows installer copies `name.exe` into `Program Files\name` and registers an uninstaller.
 
-`builds.icon` is a `.png`, `.jpg`, or `.ico` embedded into each Windows executable that Go compiles. `installers.icons.exe` sets the NSIS installer icon and defaults to that build icon. `installers.icons.dmg` is a `.png`, `.jpg`, or `.icns` shown when the disk image is mounted.
+`builds.icon` is a `.png`, `.jpg`, or `.ico` embedded into each Windows executable that Go compiles. `installers.icons.exe` sets the NSIS installer icon and defaults to that build icon. `installers.icons.dmg` is a `.png`, `.jpg`, or `.icns` used for the mounted volume and for each file inside the disk image.
 
 Included files are merged first. Scalars in the including file win. `builds` and `archives` merge by `id` when every entry has an id. Other lists are replaced.
 

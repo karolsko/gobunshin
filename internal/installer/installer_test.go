@@ -109,9 +109,10 @@ func TestDmgVolumeIcon(t *testing.T) {
 		t.Fatal(err)
 	}
 	when := time.Date(2026, 1, 2, 3, 4, 0, 0, time.UTC)
+	payload := []byte("#!/bin/sh\necho hi\n")
 	dmg, err := Dmg("gobunshin", []File{{
 		Path: "gobunshin",
-		Data: []byte("#!/bin/sh\necho hi\n"),
+		Data: payload,
 	}}, icns, when)
 	if err != nil {
 		t.Fatal(err)
@@ -122,6 +123,19 @@ func TestDmgVolumeIcon(t *testing.T) {
 	}
 	if !bytes.Contains(raw, icns) {
 		t.Fatal("icns payload missing")
+	}
+	if bytes.Count(raw, []byte("icns")) < 3 {
+		t.Fatal("file resource fork icon missing")
+	}
+	rec, err := fileRecord(raw, "gobunshin", len(payload))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if binary.BigEndian.Uint16(raw[rec+56:rec+58])&kHasCustomIcon == 0 {
+		t.Fatal("file is missing the custom icon flag")
+	}
+	if binary.BigEndian.Uint32(raw[rec+168+12:rec+168+16]) == 0 {
+		t.Fatal("file resource fork has no blocks")
 	}
 	path := filepath.Join(t.TempDir(), "gobunshin.dmg")
 	if err := os.WriteFile(path, dmg, 0o644); err != nil {
