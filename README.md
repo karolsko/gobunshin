@@ -89,15 +89,15 @@ Tag a commit and run `gobunshin release` to publish. Set `GITHUB_TOKEN` or `GH_T
 
 ### ⌨️ Commands
 
-| Command     | Action                                                                                          |
-| ----------- | ----------------------------------------------------------------------------------------------- |
-| `init`      | write `.gobunshin.yaml`                                                                         |
-| `check`     | validate the config and print the build matrix                                                 |
-| `build`     | run before hooks and compile binaries into `dist/build`                                        |
-| `release`   | build, package, and publish. Needs a semver tag unless you pass `--snapshot` or `--nightly`    |
-| `publish`   | upload the artifacts recorded in `dist/artifacts.json`                                          |
-| `changelog` | print release notes for the current tag, or for commits since the latest tag                   |
-| `next`      | print the next tag from Conventional Commits                                                    |
+| Command     | Action                                                                                      |
+| ----------- | ------------------------------------------------------------------------------------------- |
+| `init`      | write `.gobunshin.yaml`                                                                     |
+| `check`     | validate the config and print the build matrix                                              |
+| `build`     | run before hooks and compile binaries into `dist/build`                                     |
+| `release`   | build, package, and publish. Needs a semver tag unless you pass `--snapshot` or `--nightly` |
+| `publish`   | upload the artifacts recorded in `dist/artifacts.json`                                      |
+| `changelog` | print release notes for the current tag, or for commits since the latest tag                |
+| `next`      | print the next tag from Conventional Commits                                                |
 
 Flags: `--snapshot`, `--nightly`, `--single-target`, `--id` (repeatable), `--skip-publish`, `--skip-hooks`, `--skip-clean`, `--timeout`, `--parallel`, `--verbose`, `-f`.
 
@@ -165,14 +165,14 @@ monorepo:
 
 git:
   ignore_tags:
-    - '^nightly$'
+    - "^nightly$"
 
 before:
   hooks:
     - go test ./...
 after:
   hooks:
-    - cmd: 'echo released {{ .Tag }}'
+    - cmd: "echo released {{ .Tag }}"
       dir: .
 
 builds:
@@ -182,7 +182,7 @@ builds:
     env: [CGO_ENABLED=0]
     flags: [-trimpath]
     ldflags:
-      - '-s -w -X main.version={{ .Version }}'
+      - "-s -w -X main.version={{ .Version }}"
     icon: assets/icon.png
     goos: [linux, darwin, windows]
     goarch: [amd64, arm64]
@@ -227,7 +227,8 @@ installers:
 
 signs:
   - cmd: gpg
-    args: ["--batch", "--detach-sign", "--output", "${artifact}.sig", "${artifact}"]
+    args:
+      ["--batch", "--detach-sign", "--output", "${artifact}.sig", "${artifact}"]
 
 template_files:
   - src: RELEASE.md.tmpl
@@ -237,11 +238,11 @@ changelog:
   sort: asc
   groups:
     - title: Features
-      regexp: '^feat'
+      regexp: "^feat"
     - title: Fixes
-      regexp: '^fix'
+      regexp: "^fix"
   filters:
-    exclude: ['^docs:', '^chore:']
+    exclude: ["^docs:", "^chore:"]
     include_paths: [services/demo]
 
 snapshot:
@@ -330,27 +331,6 @@ You can still tag a commit yourself. A semver tag on `HEAD` (`v1.2.3` or `1.2.3`
 `1`, `1.2`, and `1.2.3` are all accepted. Prereleases sort below the final release. For a stable tag, the previous release used for the changelog is the previous stable tag, so `v1.2.3` is compared with `v1.2.2` rather than `v1.2.3-rc.1`.
 
 `git.ignore_tags` is a list of regular expressions matched against the full tag.
-
-## 👨🏻‍💻 Development
-
-1. **Clone the repository**
-
-   ```sh
-   git clone https://github.com/karolsko/gobunshin.git
-   cd gobunshin
-   ```
-
-1. **Run the tests**
-
-   ```sh
-   go test ./...
-   ```
-
-1. **Build a binary**
-
-   ```sh
-   go build -o gobunshin ./cmd/gobunshin
-   ```
 
 ## 🗒️ Credits
 
