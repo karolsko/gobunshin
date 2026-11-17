@@ -325,7 +325,10 @@ type Installer struct {
 	Bindir           string         `yaml:"bindir,omitempty"`
 	FileNameTemplate string         `yaml:"file_name_template,omitempty"`
 	Icons            InstallerIcons `yaml:"icons,omitempty"`
-	If               string         `yaml:"if,omitempty"`
+	// App places the Darwin binary in a Name.app bundle on the disk image.
+	// Finder then launches it as an application instead of in Terminal.
+	App bool   `yaml:"app,omitempty"`
+	If  string `yaml:"if,omitempty"`
 }
 
 // InstallerIcons are optional icons for installer files.

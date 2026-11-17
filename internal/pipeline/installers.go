@@ -134,11 +134,21 @@ func writeDmg(c *runctx.Context, spec config.Installer, bin *artifact.Artifact, 
 			return fmt.Errorf("installer %s: %w", spec.ID, err)
 		}
 	}
-	img, err := installer.Dmg(name, []installer.File{{
-		Path: bin.Binary,
-		Data: body,
-		Mode: 0o755,
-	}}, volumeIcon, c.CommitTime)
+	var img []byte
+	if spec.App {
+		data := c.TargetData(bin.Goos, bin.Goarch, bin.Goarm, bin.Binary)
+		ident, err := tmpl.Render(spec.Identifier, data)
+		if err != nil {
+			return fmt.Errorf("installer %s: %w", spec.ID, err)
+		}
+		img, err = installer.DmgApp(name, name, ident, c.Version, bin.Binary, body, volumeIcon, c.CommitTime)
+	} else {
+		img, err = installer.Dmg(name, []installer.File{{
+			Path: bin.Binary,
+			Data: body,
+			Mode: 0o755,
+		}}, volumeIcon, c.CommitTime)
+	}
 	if err != nil {
 		return fmt.Errorf("installer %s: %w", spec.ID, err)
 	}

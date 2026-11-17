@@ -22,16 +22,10 @@ const (
 // volumeIcon is optional ICNS data. It is the mounted volume icon and the icon
 // of each file in the image.
 func Dmg(volume string, files []File, volumeIcon []byte, when time.Time) ([]byte, error) {
-	if volume == "" {
-		return nil, fmt.Errorf("volume name is required")
-	}
 	if len(files) == 0 {
 		return nil, fmt.Errorf("disk image has no files")
 	}
-	if len(volumeIcon) > 0 && (len(volumeIcon) < 8 || string(volumeIcon[:4]) != "icns") {
-		return nil, fmt.Errorf("volume icon is not an icns file")
-	}
-	children := make([]*hfsplus.Entry, 0, len(files)+1)
+	children := make([]*hfsplus.Entry, 0, len(files))
 	for _, f := range files {
 		name := path.Base(f.Path)
 		if name == "" || name == "." || name == "/" {
@@ -52,23 +46,7 @@ func Dmg(volume string, files []File, volumeIcon []byte, when time.Time) ([]byte
 		}
 		children = append(children, entry)
 	}
-	var rootFlags uint16
-	if len(volumeIcon) > 0 {
-		children = append(children, &hfsplus.Entry{
-			Name:        ".VolumeIcon.icns",
-			Kind:        hfsplus.KindFile,
-			Data:        volumeIcon,
-			Mode:        0o644,
-			FinderFlags: kIsInvisible,
-		})
-		rootFlags = kHasCustomIcon
-	}
-	img, err := hfsplus.Build(&hfsplus.Volume{
-		Name:            volume,
-		CreatedAt:       when,
-		Children:        children,
-		RootFinderFlags: rootFlags,
-	})
+	img, err := finishDmg(volume, children, volumeIcon, when)
 	if err != nil {
 		return nil, err
 	}
@@ -81,6 +59,55 @@ func Dmg(volume string, files []File, volumeIcon []byte, when time.Time) ([]byte
 			}
 		}
 	}
+	return wrapUDIF(img)
+}
+
+// DmgApp builds a disk image whose root is one application bundle.
+// Finder launches that bundle itself, instead of opening Terminal for a raw executable.
+func DmgApp(volume, appName, identifier, version, executable string, binary, icon []byte, when time.Time) ([]byte, error) {
+	app, err := AppBundle(appName, identifier, version, executable, binary, icon)
+	if err != nil {
+		return nil, err
+	}
+	img, err := finishDmg(volume, []*hfsplus.Entry{app}, icon, when)
+	if err != nil {
+		return nil, err
+	}
+	return wrapUDIF(img)
+}
+
+func finishDmg(volume string, children []*hfsplus.Entry, volumeIcon []byte, when time.Time) ([]byte, error) {
+	if volume == "" {
+		return nil, fmt.Errorf("volume name is required")
+	}
+	if len(children) == 0 {
+		return nil, fmt.Errorf("disk image has no files")
+	}
+	if len(volumeIcon) > 0 && (len(volumeIcon) < 8 || string(volumeIcon[:4]) != "icns") {
+		return nil, fmt.Errorf("volume icon is not an icns file")
+	}
+	if len(volumeIcon) > 0 {
+		children = append(children, &hfsplus.Entry{
+			Name:        ".VolumeIcon.icns",
+			Kind:        hfsplus.KindFile,
+			Data:        volumeIcon,
+			Mode:        0o644,
+			FinderFlags: kIsInvisible,
+		})
+	}
+	var rootFlags uint16
+	if len(volumeIcon) > 0 {
+		rootFlags = kHasCustomIcon
+	}
+	return hfsplus.Build(&hfsplus.Volume{
+		Name:            volume,
+		CreatedAt:       when,
+		Children:        children,
+		RootFinderFlags: rootFlags,
+	})
+}
+
+func wrapUDIF(img []byte) ([]byte, error) {
 	var buf bytes.Buffer
 	if err := udif.Build(&buf, img, "whole disk (Apple_HFS : 0)"); err != nil {
 		return nil, err

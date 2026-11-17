@@ -221,3 +221,43 @@ func TestNSISScript(t *testing.T) {
 		t.Fatal("installer is not a Windows executable")
 	}
 }
+
+func TestDmgAppBundle(t *testing.T) {
+	var buf bytes.Buffer
+	img := image.NewNRGBA(image.Rect(0, 0, 32, 32))
+	img.Set(0, 0, color.NRGBA{R: 20, G: 120, B: 200, A: 255})
+	if err := png.Encode(&buf, img); err != nil {
+		t.Fatal(err)
+	}
+	icns, err := icon.ICNS("icon.png", buf.Bytes())
+	if err != nil {
+		t.Fatal(err)
+	}
+	when := time.Date(2026, 1, 2, 3, 4, 0, 0, time.UTC)
+	dmg, err := DmgApp("gg", "gg", "dev.karolsko.gg", "1.2.3", "gg", []byte("#!/bin/sh\necho hi\n"), icns, when)
+	if err != nil {
+		t.Fatal(err)
+	}
+	raw := inflateDMG(dmg)
+	for _, name := range []string{"gg.app", "Info.plist", "icon.icns"} {
+		if !bytes.Contains(raw, utf16BE(name)) {
+			t.Fatalf("name %q missing", name)
+		}
+	}
+	for _, text := range []string{"CFBundlePackageType", "APPL", "CFBundleExecutable", "dev.karolsko.gg"} {
+		if !bytes.Contains(raw, []byte(text)) {
+			t.Fatalf("plist text %q missing", text)
+		}
+	}
+	path := filepath.Join(t.TempDir(), "gg.dmg")
+	if err := os.WriteFile(path, dmg, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := exec.LookPath("hdiutil"); err != nil {
+		t.Skip("hdiutil is not available")
+	}
+	out, err := exec.Command("hdiutil", "verify", path).CombinedOutput()
+	if err != nil {
+		t.Fatalf("hdiutil verify: %v\n%s", err, out)
+	}
+}
