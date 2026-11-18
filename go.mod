@@ -1,9 +1,9 @@
 module github.com/karolsko/gobunshin
 
-go 1.26.4
+go 1.27.4
 
 require (
-	github.com/goreleaser/nfpm/v2 v2.48.0
+	github.com/goreleaser/nfpm/v2 v2.49.0
 	github.com/leaanthony/dmg v0.0.0-20260731075144-3d3581c3dfa3
 	github.com/tc-hib/winres v0.3.1
 	gopkg.in/yaml.v3 v3.0.1
@@ -32,9 +32,9 @@ require (
 	github.com/huandu/xstrings v1.5.0 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/kevinburke/ssh_config v1.6.0 // indirect
-	github.com/klauspost/compress v1.20.1 // indirect
+	github.com/klauspost/compress v1.20.3 // indirect
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
-	github.com/klauspost/pgzip v1.2.7 // indirect
+	github.com/klauspost/pgzip v1.3.0 // indirect
 	github.com/mitchellh/copystructure v1.2.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646 // indirect
@@ -47,7 +47,7 @@ require (
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	gitlab.com/digitalxero/go-conventional-commit v1.0.7 // indirect
 	go.digitalxero.dev/rpm v0.3.4 // indirect
-	go.yaml.in/yaml/v3 v3.0.5 // indirect
+	go.yaml.in/yaml/v3 v3.0.6 // indirect
 	golang.org/x/crypto v0.58.0 // indirect
 	golang.org/x/image v0.12.0 // indirect
 	golang.org/x/net v0.60.0 // indirect
